@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 
 import com.example.leyom.strongbox.test.RecyclerViewData;
 
@@ -18,6 +19,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     IdentifierAdapter mIdentifierAdapter;
     RecyclerViewData mRecyclerViewData;
     public static final String EXTRA_POSITION = "com.strongbox.position";
+    private static final String TAG = "MainActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         Bundle identifier = new Bundle();
         identifier.putString("identifier",mRecyclerViewData.getIdentifier(position));
         identifier.putString("username",mRecyclerViewData.getUsername(position));
+        Log.d(TAG, "onClick: username " + mRecyclerViewData.getUsername(position));
         identifier.putString("password",mRecyclerViewData.getPassword(position));
         identifier.putString("url", mRecyclerViewData.getUrl(position));
         intent.putExtra(EXTRA_POSITION, identifier);

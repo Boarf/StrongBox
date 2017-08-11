@@ -7,7 +7,7 @@ import android.widget.EditText;
 
 public class DisplayIdentifierActivity extends AppCompatActivity {
 
-
+    private static final String TAG = "DisplayIdentifierActivi";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,7 +21,7 @@ public class DisplayIdentifierActivity extends AppCompatActivity {
         EditText url = (EditText) findViewById(R.id.ed_url);
 
         identifier.setText(position.getString("identifier"));
-        userName.setText(position.getString("userName"));
+        userName.setText(position.getString("username"));
         password.setText(position.getString("password"));
         url.setText(position.getString("url"));
 
