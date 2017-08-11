@@ -20,11 +20,16 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     private static final String TAG = "IdentifierAdapter";
 
     public RecyclerViewData mData;
+    public final IdentifierAdapterOnClickHandler mOnClickHandler;
 
-    public IdentifierAdapter() {
-
+    public IdentifierAdapter(IdentifierAdapterOnClickHandler onClickHandler) {
+        mOnClickHandler = onClickHandler;
         Log.d(TAG, "IdentifierAdapter: ");
     }
+    public interface IdentifierAdapterOnClickHandler {
+        void onClick(int position);
+    }
+
     @Override
     public IdentifierAdapter.IdentifierAdapterViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Log.d(TAG, "onCreateViewHolder: ");
@@ -58,7 +63,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
         notifyDataSetChanged();
     }
 
-    public class IdentifierAdapterViewHolder extends RecyclerView.ViewHolder {
+    public class IdentifierAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         /*public  EditText mEditTextIdentifier;
         public  EditText mEditTextPassword;
@@ -69,13 +74,17 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
         public IdentifierAdapterViewHolder(View item){
             super(item);
             mTextViewIdentifier = (TextView) item.findViewById(R.id.tv_identifier);
+            item.setOnClickListener(this);
 
          /*   mEditTextIdentifier = (EditText) item.findViewById(R.id.ed_identifier);
             mEditTextPassword = (EditText) item.findViewById(R.id.ed_password);
             mEditTextUrl = (EditText) item.findViewById(R.id.ed_url);*/
         }
 
-
-
+        @Override
+        public void onClick(View v) {
+            int adapterPosition = getAdapterPosition();
+            mOnClickHandler.onClick(adapterPosition);
+        }
     }
 }
