@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.leyom.strongbox.test.RecyclerViewData;
 
@@ -28,7 +29,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     public IdentifierAdapter.IdentifierAdapterViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Log.d(TAG, "onCreateViewHolder: ");
         Context context = parent.getContext();
-        int itemLayout = R.layout.credential_list_item;
+        int itemLayout = R.layout.identifier_list_item;
         LayoutInflater layoutInflater =  LayoutInflater.from(context);
         boolean shouldAttachToParentImmediately = false;
         View view = layoutInflater.inflate(itemLayout,parent,shouldAttachToParentImmediately);
@@ -39,9 +40,10 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     public void onBindViewHolder(IdentifierAdapter.IdentifierAdapterViewHolder holder, int position) {
         Log.d(TAG, "onBindViewHolder: position =  " + position);
         Log.d(TAG, "onBindViewHolder: Identifier = " + mData.getIdentifier(position));
-        holder.mEditTextIdentifier.setText(mData.getIdentifier(position));
+        holder.mTextViewIdentifier.setText(mData.getIdentifier(position));
+       /* holder.mEditTextIdentifier.setText(mData.getIdentifier(position));
         holder.mEditTextPassword.setText(mData.getPassword(position));
-        holder.mEditTextUrl.setText(mData.getUrl(position));
+        holder.mEditTextUrl.setText(mData.getUrl(position));*/
     }
 
     @Override
@@ -58,16 +60,19 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     public class IdentifierAdapterViewHolder extends RecyclerView.ViewHolder {
 
-        public  EditText mEditTextIdentifier;
+        /*public  EditText mEditTextIdentifier;
         public  EditText mEditTextPassword;
-        public  EditText mEditTextUrl;
+        public  EditText mEditTextUrl;*/
+
+        public TextView mTextViewIdentifier;
 
         public IdentifierAdapterViewHolder(View item){
             super(item);
+            mTextViewIdentifier = (TextView) item.findViewById(R.id.tv_identifier);
 
-            mEditTextIdentifier = (EditText) item.findViewById(R.id.ed_identifier);
+         /*   mEditTextIdentifier = (EditText) item.findViewById(R.id.ed_identifier);
             mEditTextPassword = (EditText) item.findViewById(R.id.ed_password);
-            mEditTextUrl = (EditText) item.findViewById(R.id.ed_url);
+            mEditTextUrl = (EditText) item.findViewById(R.id.ed_url);*/
         }
 
 
