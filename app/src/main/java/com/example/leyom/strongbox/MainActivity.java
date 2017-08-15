@@ -1,16 +1,20 @@
 package com.example.leyom.strongbox;
 
+import android.content.Context;
 import android.content.Intent;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 
 import com.example.leyom.strongbox.test.RecyclerViewData;
 
 import static android.R.attr.data;
 import static android.R.id.message;
+import static android.os.Build.VERSION_CODES.M;
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
 public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler{
@@ -43,8 +47,14 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
         mRecyclerView.setAdapter(mIdentifierAdapter);
         mIdentifierAdapter.setData(mRecyclerViewData);
-
-
+        final Context context = this;
+        FloatingActionButton addIdentiferFab = (FloatingActionButton)  findViewById(R.id.add_identifier);
+        addIdentiferFab.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent intent = new Intent(context, DisplayIdentifierActivity.class);
+                startActivity(intent);
+            }
+        });
 
     }
 
