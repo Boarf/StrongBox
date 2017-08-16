@@ -2,6 +2,7 @@ package com.example.leyom.strongbox;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
-    RecyclerViewData mRecyclerViewData;
+    RecyclerViewData.RecyclerViewDataList mRecyclerViewDataList;
     public static final String EXTRA_POSITION = "com.strongbox.position";
     private static final String TAG = "MainActivity";
     @Override
@@ -40,13 +41,15 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         mIdentifierAdapter = new IdentifierAdapter(this);
 
         /* For testing only */
-        mRecyclerViewData = new RecyclerViewData();
-        mRecyclerViewData.setDataList();
-
+        //RecyclerViewData recyclerViewData = new RecyclerViewData();
+        //mRecyclerViewDataList =  recyclerViewData.new  RecyclerViewDataList();
+        new IdentifiersTask().execute();
         /********************/
 
         mRecyclerView.setAdapter(mIdentifierAdapter);
-        mIdentifierAdapter.setData(mRecyclerViewData);
+
+
+
         final Context context = this;
         FloatingActionButton addIdentiferFab = (FloatingActionButton)  findViewById(R.id.add_identifier);
         addIdentiferFab.setOnClickListener(new View.OnClickListener() {
@@ -58,15 +61,29 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     }
 
+    public class IdentifiersTask extends AsyncTask<Void,Void,RecyclerViewData.RecyclerViewDataList> {
+        @Override
+        protected void onPostExecute(RecyclerViewData.RecyclerViewDataList recyclerViewDataList) {
+            super.onPostExecute(recyclerViewDataList);
+            mIdentifierAdapter.setData(mRecyclerViewDataList);
+        }
+
+        @Override
+        protected RecyclerViewData.RecyclerViewDataList doInBackground(Void... params) {
+            RecyclerViewData recyclerViewData = new RecyclerViewData();
+            mRecyclerViewDataList =  recyclerViewData.new  RecyclerViewDataList();
+            return mRecyclerViewDataList;
+        }
+    }
     @Override
     public void onClick(int position) {
         Intent intent = new Intent(this, DisplayIdentifierActivity.class);
         Bundle identifier = new Bundle();
-        identifier.putString("identifier",mRecyclerViewData.getIdentifier(position));
-        identifier.putString("username",mRecyclerViewData.getUsername(position));
-        Log.d(TAG, "onClick: username " + mRecyclerViewData.getUsername(position));
-        identifier.putString("password",mRecyclerViewData.getPassword(position));
-        identifier.putString("url", mRecyclerViewData.getUrl(position));
+        identifier.putString("identifier",mRecyclerViewDataList.getIdentifier(position));
+        identifier.putString("username",mRecyclerViewDataList.getUsername(position));
+        Log.d(TAG, "onClick: username " + mRecyclerViewDataList.getUsername(position));
+        identifier.putString("password",mRecyclerViewDataList.getPassword(position));
+        identifier.putString("url", mRecyclerViewDataList.getUrl(position));
         intent.putExtra(EXTRA_POSITION, identifier);
         startActivity(intent);
 

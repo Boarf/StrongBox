@@ -10,7 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.leyom.strongbox.test.RecyclerViewData;
-
+import com.example.leyom.strongbox.test.RecyclerViewData.RecyclerViewDataList;
 /**
  * Created by Leyom on 08/08/2017.
  */
@@ -19,7 +19,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     private static final String TAG = "IdentifierAdapter";
 
-    public RecyclerViewData mData;
+    public RecyclerViewData.RecyclerViewDataList mData;
     public final IdentifierAdapterOnClickHandler mOnClickHandler;
 
     public IdentifierAdapter(IdentifierAdapterOnClickHandler onClickHandler) {
@@ -58,7 +58,8 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
         return mData.getDataList().size();
     }
 
-    void setData(RecyclerViewData data) {
+    void setData(RecyclerViewData.RecyclerViewDataList data) {
+        Log.d(TAG, "setData: " );
         mData = data;
         notifyDataSetChanged();
     }
