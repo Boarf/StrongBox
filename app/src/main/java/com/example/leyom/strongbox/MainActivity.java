@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,17 +21,24 @@ import static android.R.id.message;
 import static android.os.Build.VERSION_CODES.M;
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
-public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler{
+public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler
+, LoaderManager.LoaderCallbacks<RecyclerViewData.RecyclerViewDataList>{
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
     RecyclerViewData.RecyclerViewDataList mRecyclerViewDataList;
+    private static final int LOADER_ID = 0;
+
     public static final String EXTRA_POSITION = "com.strongbox.position";
     private static final String TAG = "MainActivity";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        LoaderManager.LoaderCallbacks<RecyclerViewData.RecyclerViewDataList> callbacks = MainActivity.this;
+        Bundle bundleForLoader = null;
+        getSupportLoaderManager().initLoader(LOADER_ID,bundleForLoader,callbacks);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_identifier);
 
@@ -40,10 +50,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
         mIdentifierAdapter = new IdentifierAdapter(this);
 
-        /* For testing only */
-        //RecyclerViewData recyclerViewData = new RecyclerViewData();
-        //mRecyclerViewDataList =  recyclerViewData.new  RecyclerViewDataList();
-        new IdentifiersTask().execute();
+
         /********************/
 
         mRecyclerView.setAdapter(mIdentifierAdapter);
@@ -61,20 +68,47 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     }
 
-    public class IdentifiersTask extends AsyncTask<Void,Void,RecyclerViewData.RecyclerViewDataList> {
-        @Override
-        protected void onPostExecute(RecyclerViewData.RecyclerViewDataList recyclerViewDataList) {
-            super.onPostExecute(recyclerViewDataList);
-            mIdentifierAdapter.setData(mRecyclerViewDataList);
-        }
+    @Override
+    public Loader<RecyclerViewData.RecyclerViewDataList> onCreateLoader(int id, Bundle args) {
+        return new AsyncTaskLoader<RecyclerViewData.RecyclerViewDataList>(this) {
 
-        @Override
-        protected RecyclerViewData.RecyclerViewDataList doInBackground(Void... params) {
-            RecyclerViewData recyclerViewData = new RecyclerViewData();
-            mRecyclerViewDataList =  recyclerViewData.new  RecyclerViewDataList();
-            return mRecyclerViewDataList;
-        }
+
+            @Override
+            public RecyclerViewData.RecyclerViewDataList loadInBackground() {
+                RecyclerViewData recyclerViewData = new RecyclerViewData();
+                RecyclerViewData.RecyclerViewDataList list =  recyclerViewData.new  RecyclerViewDataList();
+                return list;
+            }
+
+            @Override
+            protected void onStartLoading() {
+                if (mRecyclerViewDataList != null) {
+                    deliverResult(mRecyclerViewDataList);
+                }
+                else {
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public void deliverResult(RecyclerViewData.RecyclerViewDataList data) {
+                mRecyclerViewDataList = data;
+                super.deliverResult(data);
+            }
+        };
     }
+
+    @Override
+    public void onLoadFinished(Loader<RecyclerViewData.RecyclerViewDataList> loader, RecyclerViewData.RecyclerViewDataList data) {
+        mIdentifierAdapter.setData(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<RecyclerViewData.RecyclerViewDataList> loader) {
+        mIdentifierAdapter.setData(null);
+    }
+
+
     @Override
     public void onClick(int position) {
         Intent intent = new Intent(this, DisplayIdentifierActivity.class);

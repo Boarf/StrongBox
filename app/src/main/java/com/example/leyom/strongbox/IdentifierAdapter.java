@@ -53,13 +53,20 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     @Override
     public int getItemCount() {
-        Log.d(TAG, "getItemCount: size = " + mData.getDataList().size() );
+        if(mData != null) {
+            Log.d(TAG, "getItemCount: size = " + mData.getDataList().size() );
 
-        return mData.getDataList().size();
+            return mData.getDataList().size();
+        }
+        else {
+            return 0;
+        }
+
     }
 
     void setData(RecyclerViewData.RecyclerViewDataList data) {
         Log.d(TAG, "setData: " );
+
         mData = data;
         notifyDataSetChanged();
     }
