@@ -7,6 +7,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,11 +26,13 @@ import static android.R.id.message;
 import static android.os.Build.VERSION_CODES.M;
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
-public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler{
+public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler,
+        LoaderManager.LoaderCallbacks<Cursor>{
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
     RecyclerViewData.RecyclerViewDataList mRecyclerViewDataList;
+    public static final int LOADER_ID = 1 ;
     public static final String EXTRA_POSITION = "com.strongbox.position";
     private static final String TAG = "MainActivity";
     public final static int ADD_REQUEST_CODE = 1;
@@ -50,13 +55,13 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
         mIdentifierAdapter = new IdentifierAdapter(this);
 
-        /* For testing only */
-        //RecyclerViewData recyclerViewData = new RecyclerViewData();
-        //mRecyclerViewDataList =  recyclerViewData.new  RecyclerViewDataList();
+
         mDbHelper = new IdentifierDbHelper(this);
 
-        new IdentifiersTask().execute();
-        /********************/
+        LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
+        Bundle bundleForLoader = null;
+
+        getSupportLoaderManager().initLoader(LOADER_ID,bundleForLoader,callbacks);
 
 
 
@@ -84,34 +89,69 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         if(requestCode==ADD_REQUEST_CODE) {
             Log.d(TAG, "onActivityResult:result ");
             if(resultCode == RESULT_OK) {
-
+                Log.d(TAG, "onActivityResult: result ok");
                 addIdentifier(data.getStringExtra("identifier"),
                         data.getStringExtra("username"),
                         data.getStringExtra("password"),
                         data.getStringExtra("url"));
-
-                new IdentifiersTask().execute();
+                /* Result is ok meaning the database has been modified */
+                /* Launch another load */
+                /* mCursor must be null because onStartLoading won't initiate a load */
+                /* if the current cursor is valid */
+                mCursor = null;
+                LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
+                Bundle bundleForLoader = null;
+                getSupportLoaderManager().initLoader(LOADER_ID,bundleForLoader,callbacks);
             }
         }
     }
 
-    public class IdentifiersTask extends AsyncTask<Void,Void,Cursor> {
-        @Override
-        protected void onPostExecute(Cursor cursor) {
-            super.onPostExecute(cursor);
-            mCursor = cursor;
-            mIdentifierAdapter.swapCursor(cursor);
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new AsyncTaskLoader<Cursor>(this) {
+            @Override
+            public Cursor loadInBackground() {
+                mDb = mDbHelper.getWritableDatabase();
+                Cursor cursor = getAllIdentifiers();
+                return cursor;
+            }
 
-        }
+            @Override
+            protected void onStartLoading() {
+                super.onStartLoading();
+                if (mCursor != null) {
+                    Log.d(TAG, "onStartLoading: delivery");
+                    deliverResult(mCursor);
 
-        @Override
-        protected Cursor doInBackground(Void... params) {
+                } else
+                {
+                    Log.d(TAG, "onStartLoading: load");
+                    forceLoad();
+                }
 
-            mDb = mDbHelper.getWritableDatabase();
-            Cursor cursor = getAllIdentifiers();
-            return cursor;
-        }
+            }
+
+            @Override
+            public void deliverResult(Cursor data) {
+                Log.d(TAG, "deliverResult: ");
+                mCursor = data;
+                super.deliverResult(data);
+            }
+        };
     }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        Log.d(TAG, "onLoadFinished: ");
+        mIdentifierAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mIdentifierAdapter.swapCursor(null);
+    }
+
+
     private Cursor getAllIdentifiers() {
         return mDb.query(
                 IdentifierContract.IdentifierEntry.TABLE_NAME,
@@ -153,5 +193,11 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         intent.putExtra(EXTRA_POSITION, identifier);
         startActivity(intent);
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        mDb.close();
+        super.onDestroy();
     }
 }
