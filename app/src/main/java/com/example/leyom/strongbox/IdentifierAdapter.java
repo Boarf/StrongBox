@@ -1,6 +1,7 @@
 package com.example.leyom.strongbox;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.leyom.strongbox.data.IdentifierContract;
 import com.example.leyom.strongbox.test.RecyclerViewData;
 import com.example.leyom.strongbox.test.RecyclerViewData.RecyclerViewDataList;
 /**
@@ -19,7 +21,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     private static final String TAG = "IdentifierAdapter";
 
-    public RecyclerViewData.RecyclerViewDataList mData;
+    public Cursor mCursor;
     public final IdentifierAdapterOnClickHandler mOnClickHandler;
 
     public IdentifierAdapter(IdentifierAdapterOnClickHandler onClickHandler) {
@@ -42,10 +44,12 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     }
 
     @Override
-    public void onBindViewHolder(IdentifierAdapter.IdentifierAdapterViewHolder holder, int position) {
+    public void onBindViewHolder(IdentifierAdapterViewHolder holder, int position) {
         Log.d(TAG, "onBindViewHolder: position =  " + position);
-        Log.d(TAG, "onBindViewHolder: Identifier = " + mData.getIdentifier(position));
-        holder.mTextViewIdentifier.setText(mData.getIdentifier(position));
+        mCursor.moveToPosition(position);
+        int index = mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER);
+        Log.d(TAG, "onBindViewHolder: Identifier = " + mCursor.getString(index));
+        holder.mTextViewIdentifier.setText(mCursor.getString(index));
        /* holder.mEditTextIdentifier.setText(mData.getIdentifier(position));
         holder.mEditTextPassword.setText(mData.getPassword(position));
         holder.mEditTextUrl.setText(mData.getUrl(position));*/
@@ -53,14 +57,14 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     @Override
     public int getItemCount() {
-        Log.d(TAG, "getItemCount: size = " + mData.getDataList().size() );
+        Log.d(TAG, "getItemCount: size = " + mCursor.getCount() );
 
-        return mData.getDataList().size();
+        return mCursor.getCount();
     }
 
-    void setData(RecyclerViewData.RecyclerViewDataList data) {
+    void swapCursor(Cursor cursor) {
         Log.d(TAG, "setData: " );
-        mData = data;
+        mCursor = cursor;
         notifyDataSetChanged();
     }
 
