@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.View;
 
@@ -23,6 +24,7 @@ import com.example.leyom.strongbox.test.RecyclerViewData;
 
 import static android.R.attr.data;
 import static android.R.id.message;
+import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
 import static android.os.Build.VERSION_CODES.M;
 import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     IdentifierDbHelper mDbHelper;
     SQLiteDatabase mDb;
     Cursor mCursor;
+    LoaderManager mLoaderManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
         Bundle bundleForLoader = null;
 
+
         getSupportLoaderManager().initLoader(LOADER_ID,bundleForLoader,callbacks);
 
 
@@ -81,6 +85,28 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             }
         });
 
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+
+
+                IdentifierAdapter.IdentifierAdapterViewHolder holder = (IdentifierAdapter.IdentifierAdapterViewHolder) viewHolder;
+
+                mCursor.moveToPosition(holder.getAdapterPosition());
+                int id = mCursor.getInt(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry._ID));
+
+                removeIdentifier(id);
+
+                getSupportLoaderManager().getLoader(LOADER_ID).forceLoad();
+            }
+        }).attachToRecyclerView(mRecyclerView);
+
     }
 
     @Override
@@ -94,14 +120,8 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                         data.getStringExtra("username"),
                         data.getStringExtra("password"),
                         data.getStringExtra("url"));
-                /* Result is ok meaning the database has been modified */
-                /* Launch another load */
-                /* mCursor must be null because onStartLoading won't initiate a load */
-                /* if the current cursor is valid */
-                mCursor = null;
-                LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
-                Bundle bundleForLoader = null;
-                getSupportLoaderManager().initLoader(LOADER_ID,bundleForLoader,callbacks);
+
+                getSupportLoaderManager().getLoader(LOADER_ID).forceLoad();
             }
         }
     }
@@ -111,6 +131,8 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         return new AsyncTaskLoader<Cursor>(this) {
             @Override
             public Cursor loadInBackground() {
+
+                Log.d(TAG, "loadInBackground: ");
                 mDb = mDbHelper.getWritableDatabase();
                 Cursor cursor = getAllIdentifiers();
                 return cursor;
@@ -143,6 +165,9 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.d(TAG, "onLoadFinished: ");
+        if (data == null) {
+            mCursor = data;
+        }
         mIdentifierAdapter.swapCursor(data);
     }
 

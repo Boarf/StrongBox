@@ -47,8 +47,9 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     public void onBindViewHolder(IdentifierAdapterViewHolder holder, int position) {
         Log.d(TAG, "onBindViewHolder: position =  " + position);
         mCursor.moveToPosition(position);
+
         int index = mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER);
-        Log.d(TAG, "onBindViewHolder: Identifier = " + mCursor.getString(index));
+        Log.d(TAG, "onBindViewHolder: Id = " + mCursor.getString(index));
         holder.mTextViewIdentifier.setText(mCursor.getString(index));
        /* holder.mEditTextIdentifier.setText(mData.getIdentifier(position));
         holder.mEditTextPassword.setText(mData.getPassword(position));
@@ -73,12 +74,14 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
         /*public  EditText mEditTextIdentifier;
         public  EditText mEditTextPassword;
         public  EditText mEditTextUrl;*/
-
+      
         public TextView mTextViewIdentifier;
 
         public IdentifierAdapterViewHolder(View item){
             super(item);
             mTextViewIdentifier = (TextView) item.findViewById(R.id.tv_identifier);
+            /* position for the swipe */
+
             item.setOnClickListener(this);
 
          /*   mEditTextIdentifier = (EditText) item.findViewById(R.id.ed_identifier);
