@@ -64,7 +64,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
     }
 
     void swapCursor(Cursor cursor) {
-        Log.d(TAG, "setData: " );
+        Log.d(TAG, "swapCursor: " );
         mCursor = cursor;
         notifyDataSetChanged();
     }
@@ -74,7 +74,7 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
         /*public  EditText mEditTextIdentifier;
         public  EditText mEditTextPassword;
         public  EditText mEditTextUrl;*/
-      
+
         public TextView mTextViewIdentifier;
 
         public IdentifierAdapterViewHolder(View item){

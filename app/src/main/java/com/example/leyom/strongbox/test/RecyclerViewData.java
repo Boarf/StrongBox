@@ -1,11 +1,9 @@
 package com.example.leyom.strongbox.test;
 
-import android.support.v7.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-import static android.R.attr.data;
-import static android.R.attr.password;
+
 
 /**
  * Created by Leyom on 08/08/2017.

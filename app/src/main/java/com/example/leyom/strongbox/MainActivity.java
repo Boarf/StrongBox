@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.AsyncTask;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -22,29 +21,26 @@ import com.example.leyom.strongbox.data.IdentifierContract;
 import com.example.leyom.strongbox.data.IdentifierDbHelper;
 import com.example.leyom.strongbox.test.RecyclerViewData;
 
-import static android.R.attr.data;
-import static android.R.id.message;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
-import static android.os.Build.VERSION_CODES.M;
-import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
 public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler,
         LoaderManager.LoaderCallbacks<Cursor>{
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
-    RecyclerViewData.RecyclerViewDataList mRecyclerViewDataList;
+
     public static final int LOADER_ID = 1 ;
     public static final String EXTRA_POSITION = "com.strongbox.position";
     private static final String TAG = "MainActivity";
     public final static int ADD_REQUEST_CODE = 1;
+    public final static int EDIT_REQUEST_CODE = 2;
     IdentifierDbHelper mDbHelper;
     SQLiteDatabase mDb;
     Cursor mCursor;
-    LoaderManager mLoaderManager;
+    int mCurrentPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate: ");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -111,19 +107,36 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        
-        if(requestCode==ADD_REQUEST_CODE) {
-            Log.d(TAG, "onActivityResult:result ");
-            if(resultCode == RESULT_OK) {
-                Log.d(TAG, "onActivityResult: result ok");
-                addIdentifier(data.getStringExtra("identifier"),
-                        data.getStringExtra("username"),
-                        data.getStringExtra("password"),
-                        data.getStringExtra("url"));
 
-                getSupportLoaderManager().getLoader(LOADER_ID).forceLoad();
-            }
+        switch(requestCode) {
+
+
+            case ADD_REQUEST_CODE:
+                Log.d(TAG, "onActivityResult: add ");
+                if (resultCode == RESULT_OK) {
+                    Log.d(TAG, "onActivityResult: add result ok");
+                    addIdentifier(data.getStringExtra("identifier"),
+                            data.getStringExtra("username"),
+                            data.getStringExtra("password"),
+                            data.getStringExtra("url"));
+
+                }
+                break;
+            case EDIT_REQUEST_CODE:
+                Log.d(TAG, "onActivityResult: edit ");
+                if(resultCode == RESULT_OK) {
+                    Log.d(TAG, "onActivityResult: edit result ok");
+                    int Id = mCursor.getInt(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry._ID));
+                    updateIdentifier(Id,data.getStringExtra("identifier"),
+                            data.getStringExtra("username"),
+                            data.getStringExtra("password"),
+                            data.getStringExtra("url"));
+                }
+                break;
         }
+
+        getSupportLoaderManager().getLoader(LOADER_ID).forceLoad();
+
     }
 
     @Override
@@ -135,6 +148,9 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                 Log.d(TAG, "loadInBackground: ");
                 mDb = mDbHelper.getWritableDatabase();
                 Cursor cursor = getAllIdentifiers();
+                if (cursor == null) {
+                    Log.d(TAG, "loadInBackground: cursor null");
+                }
                 return cursor;
             }
 
@@ -164,16 +180,19 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.d(TAG, "onLoadFinished: ");
-        if (data == null) {
-            mCursor = data;
+        Log.d(TAG, "onLoadFinished: " );
+        if(data == null) {
+            Log.d(TAG, "onLoadFinished: cursor null");
         }
+        
         mIdentifierAdapter.swapCursor(data);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
+        Log.d(TAG, "onLoaderReset: ");
         mIdentifierAdapter.swapCursor(null);
+
     }
 
 
@@ -204,25 +223,65 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         return mDb.delete(IdentifierContract.IdentifierEntry.TABLE_NAME,
                 IdentifierContract.IdentifierEntry._ID + "="+id,null) > 0;
     }
+    private void updateIdentifier(long id,String identifier, String username,String password, String url) {
+        ContentValues cv = new ContentValues();
+        if(identifier != null) {
+            cv.put(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER, identifier);
+        }
+        if (username != null) {
+            cv.put(IdentifierContract.IdentifierEntry.COLUMN_USERNAME,username);
+        }
+        if (password != null) {
+            cv.put(IdentifierContract.IdentifierEntry.COLUMN_PASSWORD,password);
+        }
+        if (url != null) {
+            cv.put(IdentifierContract.IdentifierEntry.COLUMN_URL,url);
+        }
+        mDb.update(IdentifierContract.IdentifierEntry.TABLE_NAME,
+                cv,
+                IdentifierContract.IdentifierEntry._ID + "="+id,
+                null);
+
+    }
 
 
     @Override
     public void onClick(int position) {
         Intent intent = new Intent(this, DisplayIdentifierActivity.class);
         Bundle identifier = new Bundle();
+        mCurrentPosition = position;
         mCursor.moveToPosition(position);
         identifier.putString("identifier", mCursor.getString(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER)));
         identifier.putString("username",mCursor.getString(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_USERNAME)));
         identifier.putString("password",mCursor.getString(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_PASSWORD)));
         identifier.putString("url", mCursor.getString(mCursor.getColumnIndex(IdentifierContract.IdentifierEntry.COLUMN_URL)));
         intent.putExtra(EXTRA_POSITION, identifier);
-        startActivity(intent);
+        startActivityForResult(intent,EDIT_REQUEST_CODE);
 
     }
 
     @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop: ");
+        super.onStop();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d(TAG, "onPause: ");
+        super.onPause();
+    }
+
+    @Override
     protected void onDestroy() {
+        Log.d(TAG, "onDestroy: ");
         mDb.close();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume: ");
+        super.onResume();
     }
 }
