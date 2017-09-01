@@ -43,6 +43,15 @@ public class DisplayIdentifierActivity extends AppCompatActivity {
                 /* add */
                 Log.d(TAG, "onCreate: add identifier");
 
+                identifier.setEnabled(true);
+                userName.setEnabled(true);
+                password.setEnabled(true);
+                url.setEnabled(true);
+
+                identifier.setSelectAllOnFocus(true);
+                userName.setSelectAllOnFocus(true);
+                password.setSelectAllOnFocus(true);
+                url.setSelectAllOnFocus(true);
 
                 save.setVisibility(View.VISIBLE);
                 save.setOnClickListener(new View.OnClickListener() {
@@ -88,15 +97,17 @@ public class DisplayIdentifierActivity extends AppCompatActivity {
         if (id == R.id.action_edit) {
 
             Button save = (Button) findViewById(R.id.bn_save);
-            identifier.setEnabled(true);
-            userName.setEnabled(true);
-            password.setEnabled(true);
-            url.setEnabled(true);
-
             identifier.setSelectAllOnFocus(true);
             userName.setSelectAllOnFocus(true);
             password.setSelectAllOnFocus(true);
             url.setSelectAllOnFocus(true);
+
+            identifier.setEnabled(true);
+            userName.setEnabled(true);
+            password.setEnabled(true);
+            url.setEnabled(true);
+            identifier.selectAll();
+
 
             save.setVisibility(View.VISIBLE);
             save.setOnClickListener(new View.OnClickListener() {

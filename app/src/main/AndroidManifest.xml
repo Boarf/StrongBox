@@ -20,6 +20,10 @@
         <activity android:name=".DisplayIdentifierActivity"
             android:parentActivityName=".MainActivity">
         </activity>
+        <provider
+            android:authorities="@string/content_authority"
+            android:name=".data.IdentifierProvider"
+            android:exported="false"/>
     </application>
 
 </manifest>

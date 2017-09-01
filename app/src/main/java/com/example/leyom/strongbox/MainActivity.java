@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -34,7 +35,6 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     public final static int ADD_REQUEST_CODE = 1;
     public final static int EDIT_REQUEST_CODE = 2;
     IdentifierDbHelper mDbHelper;
-    SQLiteDatabase mDb;
     Cursor mCursor;
     int mCurrentPosition;
 
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             public Cursor loadInBackground() {
 
                 Log.d(TAG, "loadInBackground: ");
-                mDb = mDbHelper.getWritableDatabase();
+
                 Cursor cursor = getAllIdentifiers();
                 if (cursor == null) {
                     Log.d(TAG, "loadInBackground: cursor null");
@@ -195,34 +195,40 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     }
 
-
+   /* called in loadInBackground() so not in the UI thread*/
     private Cursor getAllIdentifiers() {
-        return mDb.query(
-                IdentifierContract.IdentifierEntry.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER
-        );
+       return  getContentResolver().query(
+               IdentifierContract.IdentifierEntry.CONTENT_URI,
+               null,
+               null,
+               null,
+               IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER) ;
     }
 
-    private long addIdentifier(String identifier, String username,String password, String url) {
+    /* This method should be called n a worker thread */
+    private Uri addIdentifier(String identifier, String username, String password, String url) {
         ContentValues cv = new ContentValues();
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER, identifier);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_USERNAME,username);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_PASSWORD,password);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_URL,url);
 
-        return mDb.insert(IdentifierContract.IdentifierEntry.TABLE_NAME,null, cv);
+        return getContentResolver().insert(
+                IdentifierContract.IdentifierEntry.CONTENT_URI,
+                cv);
+
     }
 
+    /* This method should be called in a worker thread */
     private boolean removeIdentifier(long id) {
 
-        return mDb.delete(IdentifierContract.IdentifierEntry.TABLE_NAME,
-                IdentifierContract.IdentifierEntry._ID + "="+id,null) > 0;
+        return getContentResolver().delete(
+                IdentifierContract.IdentifierEntry.CONTENT_URI,
+                IdentifierContract.IdentifierEntry._ID + "="+id, null) > 0;
+
     }
+
+    /* This method should be called in a worker thread */
     private void updateIdentifier(long id,String identifier, String username,String password, String url) {
         ContentValues cv = new ContentValues();
         if(identifier != null) {
@@ -237,9 +243,11 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         if (url != null) {
             cv.put(IdentifierContract.IdentifierEntry.COLUMN_URL,url);
         }
-        mDb.update(IdentifierContract.IdentifierEntry.TABLE_NAME,
+
+         getContentResolver().update(
+                IdentifierContract.IdentifierEntry.CONTENT_URI,
                 cv,
-                IdentifierContract.IdentifierEntry._ID + "="+id,
+                 IdentifierContract.IdentifierEntry._ID + "="+id,
                 null);
 
     }
@@ -275,7 +283,6 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: ");
-        mDb.close();
         super.onDestroy();
     }
 
