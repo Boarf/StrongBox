@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,6 +24,8 @@ import android.view.View;
 import com.example.leyom.strongbox.data.IdentifierContract;
 import com.example.leyom.strongbox.data.IdentifierDbHelper;
 import com.example.leyom.strongbox.test.RecyclerViewData;
+
+import static android.R.attr.data;
 
 
 public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler,
@@ -106,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             @Override
             protected void onInsertComplete(int token, Object cookie, Uri uri) {
                 super.onInsertComplete(token, cookie, uri);
+
             }
 
             @Override
@@ -157,41 +161,9 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new AsyncTaskLoader<Cursor>(this) {
-            @Override
-            public Cursor loadInBackground() {
 
-                Log.d(TAG, "loadInBackground: ");
+           return getAllIdentifiers(this);
 
-                Cursor cursor = getAllIdentifiers();
-                if (cursor == null) {
-                    Log.d(TAG, "loadInBackground: cursor null");
-                }
-                return cursor;
-            }
-
-            @Override
-            protected void onStartLoading() {
-                super.onStartLoading();
-                if (mCursor != null) {
-                    Log.d(TAG, "onStartLoading: delivery");
-                    deliverResult(mCursor);
-
-                } else
-                {
-                    Log.d(TAG, "onStartLoading: load");
-                    forceLoad();
-                }
-
-            }
-
-            @Override
-            public void deliverResult(Cursor data) {
-                Log.d(TAG, "deliverResult: ");
-                mCursor = data;
-                super.deliverResult(data);
-            }
-        };
     }
 
     @Override
@@ -200,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
         if(data == null) {
             Log.d(TAG, "onLoadFinished: cursor null");
         }
+        mCursor = data;
         
         mIdentifierAdapter.swapCursor(data);
     }
@@ -212,8 +185,9 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     }
 
    /* called in loadInBackground() so not in the UI thread*/
-    private Cursor getAllIdentifiers() {
-       return  getContentResolver().query(
+    private CursorLoader getAllIdentifiers(Context context) {
+       return  new  CursorLoader(
+               context,
                IdentifierContract.IdentifierEntry.CONTENT_URI,
                null,
                null,
