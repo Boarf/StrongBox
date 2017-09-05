@@ -2,7 +2,9 @@ package com.example.leyom.strongbox.data;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.CursorLoader;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -35,7 +37,7 @@ public class IdentifierProvider extends ContentProvider {
                 null,
                 sortOrder);
 
-        cursor.setNotificationUri(getContext().getContentResolver(),uri);
+        //cursor.setNotificationUri(getContext().getContentResolver(),uri);
 
         return cursor;
     }
@@ -61,7 +63,7 @@ public class IdentifierProvider extends ContentProvider {
                 null,
                 values
         );
-        getContext().getContentResolver().notifyChange(uri,null);
+        //getContext().getContentResolver().notifyChange(uri,null);
         return uri ;
     }
 
@@ -74,7 +76,7 @@ public class IdentifierProvider extends ContentProvider {
                 selectionArgs
         );
         if (count == 1) {
-            getContext().getContentResolver().notifyChange(uri,null);
+          //  getContext().getContentResolver().notifyChange(uri,null);
         }else {
             throw new UnsupportedOperationException("Unknown selection");
 
