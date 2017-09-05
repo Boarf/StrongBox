@@ -1,5 +1,6 @@
 package com.example.leyom.strongbox;
 
+import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -29,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
-
+    AsyncQueryHandler mQueryHandler;
     public static final int LOADER_ID = 1 ;
     public static final String EXTRA_POSITION = "com.strongbox.position";
     private static final String TAG = "MainActivity";
@@ -101,6 +102,22 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                 getSupportLoaderManager().getLoader(LOADER_ID).forceLoad();
             }
         }).attachToRecyclerView(mRecyclerView);
+        mQueryHandler = new AsyncQueryHandler(getContentResolver()) {
+            @Override
+            protected void onInsertComplete(int token, Object cookie, Uri uri) {
+                super.onInsertComplete(token, cookie, uri);
+            }
+
+            @Override
+            protected void onUpdateComplete(int token, Object cookie, int result) {
+                super.onUpdateComplete(token, cookie, result);
+            }
+
+            @Override
+            protected void onDeleteComplete(int token, Object cookie, int result) {
+                super.onDeleteComplete(token, cookie, result);
+            }
+        };
 
     }
 
@@ -205,25 +222,27 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     }
 
     /* This method should be called n a worker thread */
-    private Uri addIdentifier(String identifier, String username, String password, String url) {
+    private void addIdentifier(String identifier, String username, String password, String url) {
         ContentValues cv = new ContentValues();
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_IDENTIFIER, identifier);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_USERNAME,username);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_PASSWORD,password);
         cv.put(IdentifierContract.IdentifierEntry.COLUMN_URL,url);
+    mQueryHandler.startInsert(0,null, IdentifierContract.IdentifierEntry.CONTENT_URI,cv);
 
-        return getContentResolver().insert(
-                IdentifierContract.IdentifierEntry.CONTENT_URI,
-                cv);
 
     }
 
     /* This method should be called in a worker thread */
-    private boolean removeIdentifier(long id) {
+    private void removeIdentifier(long id) {
 
-        return getContentResolver().delete(
+        mQueryHandler.startDelete(
+                0,
+                null,
                 IdentifierContract.IdentifierEntry.CONTENT_URI,
-                IdentifierContract.IdentifierEntry._ID + "="+id, null) > 0;
+                IdentifierContract.IdentifierEntry._ID + "=" + id,
+                null);
+
 
     }
 
@@ -243,10 +262,12 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             cv.put(IdentifierContract.IdentifierEntry.COLUMN_URL,url);
         }
 
-         getContentResolver().update(
+        mQueryHandler.startUpdate(
+                0,
+                null,
                 IdentifierContract.IdentifierEntry.CONTENT_URI,
                 cv,
-                 IdentifierContract.IdentifierEntry._ID + "="+id,
+                IdentifierContract.IdentifierEntry._ID+ "=" + id,
                 null);
 
     }
