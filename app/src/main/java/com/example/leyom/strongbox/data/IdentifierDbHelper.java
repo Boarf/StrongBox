@@ -37,4 +37,6 @@ public class IdentifierDbHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + IdentifierContract.IdentifierEntry.TABLE_NAME);
         onCreate(db);
     }
+
+
 }

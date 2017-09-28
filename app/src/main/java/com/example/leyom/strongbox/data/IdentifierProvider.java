@@ -1,6 +1,7 @@
 package com.example.leyom.strongbox.data;
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.database.Cursor;
@@ -58,13 +59,45 @@ public class IdentifierProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
 
-        mDbHelper.getWritableDatabase().insert(
+        Uri returnUri;
+        long id =  mDbHelper.getWritableDatabase().insert(
                 IdentifierContract.IdentifierEntry.TABLE_NAME,
                 null,
                 values
         );
+        if ( id > 0 ) {
+            returnUri = ContentUris.withAppendedId(IdentifierContract.IdentifierEntry.CONTENT_URI, id);
+        } else {
+            throw new android.database.SQLException("Failed to insert row into " + uri);
+        }
         getContext().getContentResolver().notifyChange(uri,null);
-        return uri ;
+        return returnUri ;
+    }
+
+    @Override
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
+        final SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        db.beginTransaction();
+        int rowsInserted = 0;
+        try {
+            for (ContentValues value : values) {
+
+                long _id = db.insert(IdentifierContract.IdentifierEntry.TABLE_NAME, null, value);
+                if (_id != -1) {
+                    rowsInserted++;
+                }
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+
+        if (rowsInserted > 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return rowsInserted;
+
     }
 
     @Override
@@ -75,12 +108,9 @@ public class IdentifierProvider extends ContentProvider {
                 selection,
                 selectionArgs
         );
-        if (count == 1) {
-            getContext().getContentResolver().notifyChange(uri,null);
-        }else {
-            throw new UnsupportedOperationException("Unknown selection");
 
-        }
+        getContext().getContentResolver().notifyChange(uri,null);
+
 
         return count;
     }

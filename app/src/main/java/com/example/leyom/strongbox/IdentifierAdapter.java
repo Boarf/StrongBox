@@ -58,8 +58,9 @@ public class IdentifierAdapter extends RecyclerView.Adapter<IdentifierAdapter.Id
 
     @Override
     public int getItemCount() {
-        Log.d(TAG, "getItemCount: size = " + mCursor.getCount() );
 
+        if (null == mCursor) return 0;
+        Log.d(TAG, "getItemCount: size = " + mCursor.getCount() );
         return mCursor.getCount();
     }
 
