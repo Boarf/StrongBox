@@ -52,6 +52,7 @@ public class IdentifierProvider extends ContentProvider {
                 selection,
                 selectionArgs
         );
+        getContext().getContentResolver().notifyChange(uri,null);
         return count;
     }
 
