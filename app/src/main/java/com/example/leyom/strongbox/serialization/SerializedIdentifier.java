@@ -34,6 +34,8 @@ import java.util.ListIterator;
  * Created by Leyom on 08/09/2017.
  */
 
+// Singleton pattern is implemented to give an universal access of an instance
+// through the various components
 public class SerializedIdentifier {
 
     private static final String TAG = "SerializedIdentifier";
@@ -44,6 +46,7 @@ public class SerializedIdentifier {
     private String mProviderUsername;
     private String mOwnername;
     private String mFileName;
+    private static SerializedIdentifier instance = null;
 
     public String getFileName() {
         return mFileName;
@@ -54,8 +57,11 @@ public class SerializedIdentifier {
     }
 
 
-    public  SerializedIdentifier (Context context) {
+
+
+    private  SerializedIdentifier (Context context) {
         mContext = context;
+        // Fetch the owner in the contact
         Cursor c = mContext.getContentResolver().query(ContactsContract.Profile.CONTENT_URI,
                 null,null,null,null);
         if(c.moveToFirst()) {
@@ -65,6 +71,13 @@ public class SerializedIdentifier {
         c.close();
     }
 
+
+    public static SerializedIdentifier getInstance(Context context) {
+            if (instance == null) {
+                instance = new SerializedIdentifier(context);
+            }
+            return instance;
+    }
 
     public void setProviderUsername(String providerUsername) {
         mProviderUsername = providerUsername;
@@ -143,7 +156,7 @@ public class SerializedIdentifier {
 
     public boolean writeJsonStream( List<Identifier> identifiersList) {
 
-        if (mProvider==null || mProviderUsername==null ) {
+        if (mProvider==null || mProviderUsername==null || identifiersList == null) {
             return false;
         }
 

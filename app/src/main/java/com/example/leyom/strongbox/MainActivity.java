@@ -1,12 +1,14 @@
 package com.example.leyom.strongbox;
 
 import android.Manifest;
+import android.app.IntentService;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
@@ -22,6 +24,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -50,10 +53,13 @@ import static android.R.attr.data;
 import static android.R.attr.id;
 import static android.R.attr.password;
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
+import static com.example.leyom.strongbox.SyncService.DATA_TO_SYNC_EXTRA;
+import static com.example.leyom.strongbox.SyncService.DATA_TO_SYNC_EXTRA;
+import static com.example.leyom.strongbox.SyncService.SYNC_TO_STORAGE_EXTRA;
 
 
 public class MainActivity extends AppCompatActivity implements IdentifierAdapter.IdentifierAdapterOnClickHandler,
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>, SyncReceiver.CompleteSync {
 
     RecyclerView mRecyclerView;
     IdentifierAdapter mIdentifierAdapter;
@@ -76,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
     ArrayList<Identifier> mIdentifiers;
     SerializedIdentifier mSerializedIdentifier;
     //ContentObserver mObserver;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,28 +111,6 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
         mDbHelper = new IdentifierDbHelper(this);
 
-        // Get username
-        permissionStatus = getSharedPreferences("permissionStatus", MODE_PRIVATE);
-        requestReadContactPermission();
-
-        // Check if backup exists
-        mIdentifiers = (ArrayList<Identifier>) mSerializedIdentifier.readJsonStream();
-
-
-        //If a backup exists
-        // request a synchronization of the  DB with backup
-        // which will be done once the database is loaded
-        if (mIdentifiers.size() != 0) {
-
-            mSyncDbWithFileRequest = true;
-        }
-
-
-        // Launch database (and synchronize if needed)
-        LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
-        Bundle bundleForLoader = null;
-
-        getSupportLoaderManager().initLoader(LOADER_ID, bundleForLoader, callbacks);
 
         // UpdateRecycler view
         mRecyclerView.setAdapter(mIdentifierAdapter);
@@ -179,7 +164,8 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                 mIdentifiers.get(token).setId(id);
                 // Synchronize the file with database
 
-                mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                //mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                startSync(getApplicationContext(),true);
 
             }
 
@@ -188,7 +174,8 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                 super.onUpdateComplete(token, cookie, result);
                 // Synchronize file with database
 
-                mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                //mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                startSync(getApplicationContext(),false);
 
             }
 
@@ -210,13 +197,52 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
                 } else {
                     // Only one element was deleted in the DB
 
-                    mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                    //mSerializedIdentifier.writeJsonStream(mIdentifiers);
+                    startSync(getApplicationContext(),false);
                 }
 
             }
         };
 
 
+        // Get username
+        permissionStatus = getSharedPreferences("permissionStatus", MODE_PRIVATE);
+        requestReadContactPermission();
+
+        // Register broadcast receiver for after synchronization status
+        IntentFilter syncIntentFilter = new IntentFilter( SyncConstantsReceiver.SYNC_BROADCAST_ACTION);
+
+        SyncReceiver syncReceiver = new SyncReceiver(this);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(syncReceiver,syncIntentFilter);
+
+        // Launch service for synchronization by reading the file from storage
+         startSync(this,false);
+        // Check if backup exists
+        //mIdentifiers = (ArrayList<Identifier>) mSerializedIdentifier.readJsonStream();
+
+
+
+
+    }
+
+    @Override
+    public void finishSync(ArrayList<Identifier> readFromStorage) {
+        //If a backup exists
+        // request a synchronization of the  DB with backup
+        // which will be done once the database is loaded
+        mIdentifiers = readFromStorage;
+        if (mIdentifiers.size() != 0) {
+
+            mSyncDbWithFileRequest = true;
+        }
+
+
+        // Launch database (and synchronize if needed)
+        LoaderManager.LoaderCallbacks<Cursor> callbacks = MainActivity.this;
+        Bundle bundleForLoader = null;
+
+        getSupportLoaderManager().initLoader(LOADER_ID, bundleForLoader, callbacks);
     }
 
     @Override
@@ -341,7 +367,8 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             // when the DB has been re populated with data from the file
             // The goal is to keep id from DB and id from backup the same
             fillJsonListWithDB(mIdentifiers, mCursor);
-            mSerializedIdentifier.writeJsonStream(mIdentifiers);
+            //mSerializedIdentifier.writeJsonStream(mIdentifiers);
+            startSync(this,true);
             mSyncFileWithDB = false;
         }
 
@@ -447,7 +474,7 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
 
     private void proceedPermissionGranted() {
         Log.d(TAG, "proceedPermissionGranted: ");
-        mSerializedIdentifier = new SerializedIdentifier(this);
+        mSerializedIdentifier = SerializedIdentifier.getInstance(this);
         mSerializedIdentifier.setProvider("microsoft");
         mSerializedIdentifier.setProviderUsername("guillaume");
 
@@ -614,6 +641,15 @@ public class MainActivity extends AppCompatActivity implements IdentifierAdapter
             list.add(id);
         }
 
+    }
+
+    public void startSync(Context context,boolean toStorage) {
+        Intent syncIntent = new Intent(context,SyncService.class);
+        syncIntent.putExtra(SYNC_TO_STORAGE_EXTRA,toStorage);
+        if (toStorage) {
+            syncIntent.putParcelableArrayListExtra(DATA_TO_SYNC_EXTRA, mIdentifiers);
+        }
+        context.startService(syncIntent);
     }
 
     private void syncFileToDb(String filename) {
